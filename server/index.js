@@ -12,9 +12,8 @@ app.use('/api', importRoutes);
 
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
-    
+      app.listen(PORT, () => {
+            console.log(`🚀 Server running on port ${process.env.PORT}`);
+          });
   })
   .catch(err => console.error('MongoDB connection error:', err));
-app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${process.env.PORT}`);
-    });
