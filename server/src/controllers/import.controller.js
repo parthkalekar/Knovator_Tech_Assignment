@@ -6,7 +6,7 @@ const importJobs = async(req, res) => {
   const url = req.body.url;
   try {
     const jobs = await fetchJobsFromXMLFeed(url);
-    console.log("jobs => ", jobs)
+    // console.log("jobs => ", jobs)
     let failed = [];
 
     for (let job of jobs) {
