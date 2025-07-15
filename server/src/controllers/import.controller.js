@@ -1,26 +1,34 @@
 const { fetchJobsFromXMLFeed } = require('../services/jobFetcher');
 const jobQueue = require('../jobs/jobQueue');
 const ImportLog = require('../models/importLogs.schema');
+const Job = require('../models/job.schema');
 
 const importJobs = async(req, res) => {
   const url = req.body.url;
   try {
     const jobs = await fetchJobsFromXMLFeed(url);
-    // console.log("jobs => ", jobs)
     let failed = [];
-
-    for (let job of jobs) {
+    let newCount = 0;
+    let updatedCount = 0;
+    for (let jobData of jobs) {
       try {
-        const modifiedJob = {
-          jobId: job.jobId?._,
-          title: job.title,
-          company: job.company,
-          description: job.description,
-          url: job.url,
+        const modifiedJobData = {
+          jobId: jobData.jobId?._,
+          title: jobData.title,
+          company: jobData.company,
+          description: jobData.description,
+          url: jobData.url,
         }
-        await jobQueue.add('importJob', modifiedJob);
-      } catch (e) {
-        failed.push({ jobId: job.jobId, reason: e.message });
+        const existing = await Job.findOne({ jobId: jobData.jobId?._ });
+        if (existing) {
+          await Job.updateOne({ jobId: jobData.jobId?._ }, modifiedJobData);
+          updatedCount++;
+        } else {
+          await Job.create(modifiedJobData);
+          newCount++;
+        }
+      } catch (err) {
+        failed.push({ jobId: jobData.jobId, reason: err.message });
       }
     }
 
@@ -28,8 +36,8 @@ const importJobs = async(req, res) => {
       fileName: url,
       totalFetched: jobs.length,
       totalImported: jobs.length - failed.length,
-      newJobs: 0, // Will be updated in future (if worker returns status)
-      updatedJobs: 0,
+      newJobs: newCount, // Will be updated in future (if worker returns status)
+      updatedJobs: updatedCount,
       failedJobs: failed,
     });
 
