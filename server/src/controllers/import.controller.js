@@ -6,11 +6,19 @@ const importJobs = async(req, res) => {
   const url = req.body.url;
   try {
     const jobs = await fetchJobsFromXMLFeed(url);
+    console.log("jobs => ", jobs)
     let failed = [];
 
     for (let job of jobs) {
       try {
-        await jobQueue.add('importJob', job);
+        const modifiedJob = {
+          jobId: job.jobId?._,
+          title: job.title,
+          company: job.company,
+          description: job.description,
+          url: job.url,
+        }
+        await jobQueue.add('importJob', modifiedJob);
       } catch (e) {
         failed.push({ jobId: job.jobId, reason: e.message });
       }
